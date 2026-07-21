@@ -60,9 +60,9 @@ build_packages() {
 	./xbps-src binary-bootstrap \
 		|| edie "xbps binary-bootstrap"
 
-	for ver in 3.14 #3.13 3.12
+	for ver in 3.14 3.13 3.12 3.11 3.10
 	do
-		./xbps-src pkg multi-python$ver \
+		./xbps-src pkg freshsnakes-python$ver \
 			|| edie "make package"
 	done
 }

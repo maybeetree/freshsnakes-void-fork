@@ -5,13 +5,13 @@
 # - coccinelle
 #
 
-# void-multipython: these are normally set in
+# freshsnakes: these are normally set in
 # common/environment/setup/python.sh
 # for "the" python version
 
-py3_ver="3.14"
-version="${py3_ver}.6"
-pkgname="multi-python${py3_ver}"
+py3_ver="3.11"
+version="${py3_ver}.15"
+pkgname="freshsnakes-python${py3_ver}"
 prefix="opt/$pkgname"
 
 py3_abiver=""
@@ -19,7 +19,7 @@ py3_lib="${prefix}/lib/python${py3_ver}"
 py3_sitelib="${py3_lib}/site-packages"
 py3_inc="${prefix}/include/python${py3_ver}${py3_abiver}"
 
-# void-multipython: I don't know why this is required,
+# freshsnakes: I don't know why this is required,
 # it's not there in the native python package template,
 # but everything breaks without it.
 # I think because the package name is changed,
@@ -61,11 +61,11 @@ distfiles="
  https://www.python.org/ftp/python/${version%rc*}/Python-${version}.tar.xz
  ${KERNEL_SITE}/bluetooth/${_bluez}.tar.xz
 "
-checksum="143b1dddefaec3bd2e21e3b839b34a2b7fb9842272883c576420d605e9f30c63
+checksum="272179ddd9a2e41a0fc8e42e33dfbdca0b3711aa5abf372d3f2d51543d09b625
  830fed1915c5d375b8de0f5e6f45fcdea0dcc5ff5ffb3d31db6ed0f00d73c5e3"
 skip_extraction="${_bluez}.tar.xz"
 
-# void-multipython: don't provide alternatives (e.g. python3 command,
+# freshsnakes: don't provide alternatives (e.g. python3 command,
 # man python3), these should be managed by Void's standard python pkgs
 
 alternatives=""
@@ -79,7 +79,7 @@ if [ "$XBPS_TARGET_LIBC" = "glibc" ]; then
 fi
 
 if [ "$CROSS_BUILD" ]; then
-	echo "void-multipython: CROSS_BUILD not yet supported" >&2
+	echo "freshsnakes: CROSS_BUILD not yet supported" >&2
 	exit 8
 	#hostmakedepends+=" python3"
 	#configure_args+=" --with-build-python=python${py3_ver}"
@@ -158,7 +158,7 @@ do_check() {
 do_install() {
 	make DESTDIR=${DESTDIR} install maninstall
 
-	# void-multipython: put license into correct spot.
+	# freshsnakes: put license into correct spot.
 	# Usually this is done with `vlicense` script,
 	# but we have weird prefix
 	mkdir -p ${DESTDIR}/${prefix}/share/licenses/${pkgname}
@@ -206,7 +206,7 @@ do_install() {
 	vinstall ${FILESDIR}/EXTERNALLY-MANAGED 644 "${py3_lib}"
 }
 
-# void-multipython: TODO: devel package
+# freshsnakes: TODO: devel package
 
 #python3-devel_package() {
 #	short_desc+=" - development files"

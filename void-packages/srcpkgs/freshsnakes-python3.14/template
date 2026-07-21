@@ -5,25 +5,47 @@
 # - coccinelle
 #
 
-# void-multipython: these are normally set in
+# freshsnakes: these are normally set in
 # common/environment/setup/python.sh
 # for "the" python version
 
-py3_ver="3.12"
-py3_abiver=""
-py3_lib="usr/lib/python${py3_ver}"
-py3_sitelib="${py3_lib}/site-packages"
-py3_inc="usr/include/python${py3_ver}${py3_abiver}"
+py3_ver="3.14"
+version="${py3_ver}.6"
+pkgname="freshsnakes-python${py3_ver}"
+prefix="opt/$pkgname"
 
-pkgname=multi-python3.12
-version=3.12.9
+py3_abiver=""
+py3_lib="${prefix}/lib/python${py3_ver}"
+py3_sitelib="${py3_lib}/site-packages"
+py3_inc="${prefix}/include/python${py3_ver}${py3_abiver}"
+
+# freshsnakes: I don't know why this is required,
+# it's not there in the native python package template,
+# but everything breaks without it.
+# I think because the package name is changed,
+# some part of xbps-src does not fully realize that we're
+# building a package for Python itself, not for a Python module?
+python_version=$version
+
 revision=1
 build_style="gnu-configure"
 configure_args="--enable-shared --enable-ipv6
  --enable-loadable-sqlite-extensions --with-computed-gotos
  --with-dbmliborder=gdbm:ndbm --with-system-expat
- --without-ensurepip ac_cv_working_tzset=yes"
+ --without-ensurepip ac_cv_working_tzset=yes
+
+ --prefix=/${prefix}
+ --exec-prefix=/${prefix}
+ --sysconfdir=/${prefix}/etc
+ --sbindir=/${prefix}/bin
+ --bindir=/${prefix}/bin
+ --mandir=/${prefix}/share/man
+ --infodir=/${prefix}/share/info
+ --localstatedir=/${prefix}/var
+ --libdir=/${prefix}/lib64
+ "
 pycompile_dirs="${py3_lib}"
+#pycompile_dirs=""
 hostmakedepends="pkgconf autoconf-archive automake"
 makedepends="libffi-devel readline-devel gdbm-devel openssl-devel
  expat-devel sqlite-devel bzip2-devel zlib-devel liblzma-devel libzstd-devel"
@@ -39,11 +61,11 @@ distfiles="
  https://www.python.org/ftp/python/${version%rc*}/Python-${version}.tar.xz
  ${KERNEL_SITE}/bluetooth/${_bluez}.tar.xz
 "
-checksum="7220835d9f90b37c006e9842a8dff4580aaca4318674f947302b8d28f3f81112
+checksum="143b1dddefaec3bd2e21e3b839b34a2b7fb9842272883c576420d605e9f30c63
  830fed1915c5d375b8de0f5e6f45fcdea0dcc5ff5ffb3d31db6ed0f00d73c5e3"
 skip_extraction="${_bluez}.tar.xz"
 
-# void-multipython: don't provide alternatives (e.g. python3 command,
+# freshsnakes: don't provide alternatives (e.g. python3 command,
 # man python3), these should be managed by Void's standard python pkgs
 
 alternatives=""
@@ -56,15 +78,15 @@ if [ "$XBPS_TARGET_LIBC" = "glibc" ]; then
 	makedepends+=" libxcrypt-devel"
 fi
 
-# void-multipython: TODO: what does this do?
-
-#if [ "$CROSS_BUILD" ]; then
-#	hostmakedepends+=" python3"
-#	configure_args+=" --with-build-python=python${py3_ver}"
-#	configure_args+=" ac_cv_broken_sem_getvalue=no"
-#else
-#	configure_args+=" --enable-optimizations"
-#fi
+if [ "$CROSS_BUILD" ]; then
+	echo "freshsnakes: CROSS_BUILD not yet supported" >&2
+	exit 8
+	#hostmakedepends+=" python3"
+	#configure_args+=" --with-build-python=python${py3_ver}"
+	#configure_args+=" ac_cv_broken_sem_getvalue=no"
+else
+	configure_args+=" --enable-optimizations"
+fi
 
 post_extract() {
 	# Ensure that the internal copy of expat is not used
@@ -136,17 +158,20 @@ do_check() {
 do_install() {
 	make DESTDIR=${DESTDIR} install maninstall
 
-	# Put the license in the usual location and remove from the libdir
-	# to prevent the XBPS trigger from attempting to byte-compile it
-	vlicense LICENSE
-	rm ${DESTDIR}/${py3_lib}/LICENSE.txt
+	# freshsnakes: put license into correct spot.
+	# Usually this is done with `vlicense` script,
+	# but we have weird prefix
+	mkdir -p ${DESTDIR}/${prefix}/share/licenses/${pkgname}
+	mv \
+		${DESTDIR}/${py3_lib}/LICENSE.txt \
+		${DESTDIR}/${prefix}/share/licenses/${pkgname}/LICENSE
 
-	rm -f ${DESTDIR}/usr/bin/2to3
+	rm -f ${DESTDIR}/${prefix}/bin/2to3
 
 	local _dst_py3_lib="${DESTDIR}/${py3_lib}"
 
 	# Remove files that belong to python3-tkinter and idle-python3
-	rm ${DESTDIR}/usr/bin/idle3*
+	rm ${DESTDIR}/${prefix}/bin/idle3*
 	rm ${_dst_py3_lib}/turtle.py
 	rm -r ${_dst_py3_lib}/idlelib
 	rm -r ${_dst_py3_lib}/tkinter
@@ -157,23 +182,23 @@ do_install() {
 	rm -rf ${_dst_py3_lib}/lib2to3/tests
 
 	# Remove references to the install(1) wrapper.
-	sed -e "s,${XBPS_WRAPPERDIR},/usr/bin,g" -i \
+	sed -e "s,${XBPS_WRAPPERDIR},/${prefix}/bin,g" -i \
 		${_dst_py3_lib}/_sysconfigdata_*_*.py \
 		${_dst_py3_lib}/config-${version%.*}*/Makefile
 
-	if [ "$CROSS_BUILD" ]; then
-		# Remove references to cross toolchain.
-		sed -i "s/$XBPS_CROSS_TRIPLET-//g" \
-			${_dst_py3_lib}/_sysconfigdata_*_*.py \
-			${_dst_py3_lib}/config-${version%.*}*/Makefile
-		sed -i -e "s,$XBPS_CROSS_BASE,,g" \
-			${DESTDIR}/usr/bin/python${version%.*}-config
-	fi
+	#if [ "$CROSS_BUILD" ]; then
+	#	# Remove references to cross toolchain.
+	#	sed -i "s/$XBPS_CROSS_TRIPLET-//g" \
+	#		${_dst_py3_lib}/_sysconfigdata_*_*.py \
+	#		${_dst_py3_lib}/config-${version%.*}*/Makefile
+	#	sed -i -e "s,$XBPS_CROSS_BASE,,g" \
+	#		${DESTDIR}/usr/bin/python${version%.*}-config
+	#fi
 
 	sed -i -e "s,-I./External,," \
 		-e "s,-ffile-prefix-map=[^[:space:]]*=[.],," \
 		-e "s,-fdebug-prefix-map=[^[:space:]]*=[.],," \
-		${DESTDIR}/usr/bin/python${version%.*}-config \
+		${DESTDIR}/${prefix}/bin/python${version%.*}-config \
 		${_dst_py3_lib}/_sysconfigdata_*_*.py \
 		${_dst_py3_lib}/config-${version%.*}*/Makefile
 
@@ -181,7 +206,7 @@ do_install() {
 	vinstall ${FILESDIR}/EXTERNALLY-MANAGED 644 "${py3_lib}"
 }
 
-# void-multipython: TODO: devel package
+# freshsnakes: TODO: devel package
 
 #python3-devel_package() {
 #	short_desc+=" - development files"
