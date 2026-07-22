@@ -50,6 +50,9 @@ ensure_unshare() {
 	then
 		eecho "am already root (container environment?), "
 		eecho "should be able to mount overlayfs."
+		mtry "run without unshare (if this fails,
+try running the container with --cap-add=SYS_ADMIN or
+--privileged)" "$@"
 	else
 		eecho "Am not root, unsharing..."
 		mtry "unshare" unshare -rUm -- "$@"
@@ -77,7 +80,7 @@ build_packages() {
 	)
 
 	#for ver in 3.14 3.13 3.12 3.11 3.10
-	for pkg in $(try cd ./void-packages/srcpkgs ; try ls ; )
+	for pkg in $(try cd "$self_packages_path/srcpkgs" ; try ls ; )
 	do
 		#pkg="$(pecho "$pkg" | try cut -d/ -f4)"
 		eecho "building: $pkg"
