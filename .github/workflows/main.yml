@@ -45,13 +45,13 @@ jobs:
         uses: actions/cache@v4
         env:
           cache-name: cache-pkgs
-          with:
-            path: ./upper/hostdir/binpkgs/
-            key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('*.xbps') }}
-            restore-keys: |
-              ${{ runner.os }}-build-${{ env.cache-name }}-
-              ${{ runner.os }}-build-
-              ${{ runner.os }}-
+        with:
+          path: ./upper/hostdir/binpkgs/
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('*.xbps') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
 
       - name: Build packages
         run: ./scripts/doit.sh
