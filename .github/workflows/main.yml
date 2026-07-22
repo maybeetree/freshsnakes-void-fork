@@ -1,0 +1,58 @@
+name: main
+
+on:
+  push:
+    tags:
+      - "v*"
+
+jobs:
+  build-image:
+    runs-on: ubuntu-latest
+
+    #container:
+    #  image: ghcr.io/${{ github.repository }}:main
+    #  options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Mark repo as safe for git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Build image if needed
+        run: ./scripts/gh.sh build_image_if_needed ghcr.io/${{ github.repository }}:main
+
+  build-packages:
+    runs-on: ubuntu-latest
+    needs: build-image
+
+    container:
+      image: ghcr.io/${{ github.repository }}:main
+      options: --user root
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Mark repo as safe for git
+        run: |
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+      - name: Cache built packages
+        id: cache-pkgs
+        uses: actions/cache@v4
+        env:
+          cache-name: cache-pkgs
+          with:
+            path: ./upper/hostdir/binpkgs/
+            key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('*.xbps') }}
+            restore-keys: |
+              ${{ runner.os }}-build-${{ env.cache-name }}-
+              ${{ runner.os }}-build-
+              ${{ runner.os }}-
+
+      - name: Build packages
+        run: ./scripts/doit.sh
+

@@ -1,0 +1,103 @@
+#!/bin/sh
+
+eecho() { echo "$@" >&2 ; }
+pecho() { printf '%s' "$*" ; }
+die() { eecho "$@"; exit 1; }
+edie() { die "Failed to: $*"; }
+try() {
+	"$@" || {
+		eecho ''
+		eecho "Failed to run: '$*'"
+		eecho ''
+		kill "$$"
+	}
+}
+mtry() {
+	msg="$1"
+	shift
+	"$@" || {
+		eecho ''
+		eecho "Failed: '$msg'"
+		eecho "(command: $* )"
+		eecho ''
+		kill "$$"
+	}
+}
+
+check_remote_image() {
+	image="$1"
+	docker manifest inspect "$image"
+}
+
+get_latest_tag() {
+	git describe --tags --abbrev=0
+}
+
+get_previous_tag() {
+	git describe --abbrev=0 --tags \
+		"$(git rev-list --tags --skip=1  --max-count=1)"
+}
+
+get_changes_since() {
+	rev=$1
+	shift
+	git diff --name-only "$rev" -- "$@"
+}
+
+build_and_push_image() {
+	image="$1"
+	try docker build . --tag "$image"
+	try docker push "$image"
+}
+
+#pull_image() {
+#	image="$1"
+#	try docker pull "$image"
+#}
+
+build_image_if_needed() {
+	image="$1"
+
+	if ! check_remote_image "$image"
+	then
+		eecho "Image does not exist on ghcr, building image!"
+		build_and_push_image "$image"
+		return 0
+	fi
+
+	if ! get_latest_tag
+	then
+		eecho "Not git tags found, building image!"
+		build_and_push_image "$image"
+		return 0
+	fi
+
+	if ! get_previous_tag
+	then
+		eecho "Not git tags found, building image!"
+		build_and_push_image "$image"
+		return 0
+	fi
+
+	previous_tag="$(try get_previous_tag)"
+	changes_since="$(try get_changes_since "$previous_tag" ./Dockerfile)"
+
+	if [ -n "$changes_since" ]
+	then
+		eecho "Dockerfile changed, building image!"
+		build_and_push_image "$image"
+		return 0
+	fi
+
+	eecho "No need to rebuild image!"
+	#pull_image "$image"
+	return 0
+}
+
+if [ -z "$1" ]
+then
+	die "Specify command."
+fi
+
+"$@"
+
