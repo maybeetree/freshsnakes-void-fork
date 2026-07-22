@@ -43,7 +43,7 @@ jobs:
     container:
       image: ghcr.io/${{ github.repository }}:main
       # SYS_ADMIN needed for overlayfs
-      options: --user root --cap-add=SYS_ADMIN
+      options: --user root --privileged
 
     steps:
       - name: Checkout repository

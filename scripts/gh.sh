@@ -29,13 +29,23 @@ check_remote_image() {
 	docker manifest inspect "$image"
 }
 
+#get_latest_tag() {
+#	git describe --tags --abbrev=0
+#}
+#
+#get_previous_tag() {
+#	git describe --abbrev=0 --tags \
+#		"$(git rev-list --tags --skip=1  --max-count=1)"
+#}
+
 get_latest_tag() {
-	git describe --tags --abbrev=0
+	git fetch --tags --force >/dev/null 2>&1
+	git describe --tags --abbrev=0 "$(git rev-list --tags --max-count=1)"
 }
 
 get_previous_tag() {
-	git describe --abbrev=0 --tags \
-		"$(git rev-list --tags --skip=1  --max-count=1)"
+	git fetch --tags --force >/dev/null 2>&1
+	git describe --tags --abbrev=0 "$(git rev-list --tags --skip=1 --max-count=1)"
 }
 
 get_changes_since() {
@@ -67,14 +77,14 @@ build_image_if_needed() {
 
 	if ! get_latest_tag
 	then
-		eecho "Not git tags found, building image!"
+		eecho "No latest tag found, building image!"
 		build_and_push_image "$image"
 		return 0
 	fi
 
 	if ! get_previous_tag
 	then
-		eecho "Not git tags found, building image!"
+		eecho "No previous tag found, building image!"
 		build_and_push_image "$image"
 		return 0
 	fi
