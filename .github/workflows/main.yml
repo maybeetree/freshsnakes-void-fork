@@ -5,6 +5,10 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write   # create release + upload assets
+  packages: write   # pull and push images
+
 jobs:
   build-image:
     runs-on: ubuntu-latest
@@ -55,4 +59,13 @@ jobs:
 
       - name: Build packages
         run: ./scripts/doit.sh
+
+      - name: Create GitHub Release and upload artifacts
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: Release ${{ github.ref_name }}
+          generate_release_notes: true
+          files: |
+            ./upper/hostdir/binpkgs/*
 
