@@ -34,7 +34,7 @@ changed_pkgs() {
 			HEAD~1..HEAD \
 			-- "$pkgsdir" \
 		| try strip_dotslash \
-		| cut -d '/' -f 3 \
+		| try cut -d '/' -f 3 \
 		| try sort \
 		| try uniq \
 	)"
