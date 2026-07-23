@@ -67,6 +67,31 @@ build_and_push_image() {
 #	try docker pull "$image"
 #}
 
+get_latest_assets() {
+	repo="$1"
+	#latest_tag="$(
+	#	gh release list \
+	#	-R "$repo" \
+	#	--json tagName,isLatest \
+	#	--jq '.[]|select(.isLatest).tagName' \
+	#)"
+
+	#if [ -z "$latest_tag" ]
+	#then
+	#	eecho "No latest release found."
+	#	return 0
+	#fi
+
+	gh release download \
+		-p "*" \
+		-D ./upper/hostdir/binpkgs \
+		-R "$repo" \
+		|| {
+			eecho "No latest release found."
+			return 0
+		}
+}
+
 build_image_if_needed() {
 	image="$1"
 
