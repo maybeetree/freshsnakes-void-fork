@@ -37,7 +37,7 @@ get_upstream() {
 	then
 		eecho "Cloning $upstream_url into $upstream_path ..."
 		mtry "clone void-packages repo" \
-			git clone "$upstream_url" "$upstream_path"
+			git clone $GIT_CLONE_ARGS "$upstream_url" "$upstream_path"
 	else
 		eecho "void-packages already cloned, pulling..."
 		mtry "pull void-packages repo" \
