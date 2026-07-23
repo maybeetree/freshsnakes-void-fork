@@ -38,6 +38,8 @@ check_remote_image() {
 #		"$(git rev-list --tags --skip=1  --max-count=1)"
 #}
 
+# These versions should work inside a github actions run
+# (i.e. detached head state)
 get_latest_tag() {
 	git fetch --tags --force >/dev/null 2>&1
 	git describe --tags --abbrev=0 "$(git rev-list --tags --max-count=1)"

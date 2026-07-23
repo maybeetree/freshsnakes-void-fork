@@ -62,7 +62,9 @@ jobs:
           cache-name: cache-pkgs
         with:
           path: ./upper/hostdir/binpkgs/
-          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('*.xbps') }}
+          # the hashFiles is relative to repo root I think????
+          # so need **/*.xbps instead of plain *.xbps
+          key: ${{ runner.os }}-build-${{ env.cache-name }}-${{ hashFiles('**/*.xbps') }}
           restore-keys: |
             ${{ runner.os }}-build-${{ env.cache-name }}-
             ${{ runner.os }}-build-
