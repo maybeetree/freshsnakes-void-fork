@@ -82,14 +82,22 @@ get_latest_assets() {
 	#	return 0
 	#fi
 
-	gh release download \
+	output="$(gh release download \
 		-p "*" \
 		-D ./upper/hostdir/binpkgs \
 		-R "$repo" \
+	)" \
 		|| {
-			eecho "No latest release found."
-			return 0
+			if pecho "$output" | grep 'release not found'
+			then
+				eecho "No latest release found."
+				return 0
+			fi
+			die "Unknown error, bailing!"
+			}
 		}
+
+	eecho "downloaded successfully"
 }
 
 build_image_if_needed() {
