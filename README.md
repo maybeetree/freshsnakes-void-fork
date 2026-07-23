@@ -32,7 +32,7 @@ sudo xdowngrade ./freshsnakes-python3.12-3.12.9_1.x86_64.xbps
 
 Unlike Void's standard python package, which integrates deeply
 with both the filesystem and the package manager,
-the freshsnakes packages stive to be more or less isolated
+the freshsnakes packages strive to be more or less isolated
 to avoid conflicts.
 Everything is installed under `/opt/freshsnakes-python$version`:
 
