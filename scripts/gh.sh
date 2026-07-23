@@ -86,16 +86,14 @@ get_latest_assets() {
 		-p "*" \
 		-D ./upper/hostdir/binpkgs \
 		-R "$repo" \
-	)" \
-		|| {
-			if pecho "$output" | grep 'release not found'
-			then
-				eecho "No latest release found."
-				return 0
-			fi
-			die "Unknown error, bailing!"
-			}
-		}
+	)" || {
+		if pecho "$output" | grep 'release not found'
+		then
+			eecho "No latest release found."
+			return 0
+		fi
+		die "Unknown error, bailing!"
+	}
 
 	eecho "downloaded successfully"
 }
