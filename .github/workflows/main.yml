@@ -42,7 +42,9 @@ jobs:
 
     container:
       image: ghcr.io/${{ github.repository }}:main
-      # SYS_ADMIN needed for overlayfs
+      # typically only SYS_ADMIN capability is needed
+      # for overlayfs, but on github's docker for some reason
+      # full on --privileged is required
       options: --user root --privileged
 
     steps:
@@ -67,7 +69,10 @@ jobs:
             ${{ runner.os }}-
 
       - name: Build packages
-        run: ./scripts/doit.sh
+        run: |
+          # Shallow clone is faster
+          export GIT_CLONE_ARGS="--depth=1"
+          ./scripts/doit.sh
 
       - name: Create GitHub Release and upload artifacts
         uses: softprops/action-gh-release@v2
